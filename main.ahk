@@ -25,6 +25,7 @@ Gui, Add, Hotkey, x+5 yp-4 w100 vProjectHotkey
 Gui, Add, Checkbox, x+5 yp+4 vUseWin, Win键
 Gui, Add, Button, x+10 yp-4 w60 gAddHotkey, 添加
 Gui, Add, Button, x+10 yp w80 gDeleteSelected, 删除所选
+Gui, Add, Button, x+10 yp w80 gReloadConfig, 重新加载
 
 ; 目标输入框单独一行，因为通常需要较长的输入
 Gui, Add, Text, x10 y+15, 目标:
@@ -169,4 +170,28 @@ return
 ExitApp:
     SaveSettings()
     ExitApp
+return
+
+; 重载配置的标签
+ReloadConfig:
+    ; 清空现有列表
+    LV_Delete()
+    
+    ; 禁用所有已注册的热键
+    Loop % LV_GetCount()
+    {
+        LV_GetText(hotkey, A_Index, 4)
+        Hotkey, %hotkey%, Off
+    }
+    
+    ; 重新加载设置
+    LoadSettings()
+    
+    ; 调整列宽
+    LV_ModifyCol(1, "AutoHdr")
+    LV_ModifyCol(2, "AutoHdr")
+    LV_ModifyCol(3, "AutoHdr")
+    LV_ModifyCol(4, "AutoHdr")
+    
+    MsgBox, 配置已重新加载。
 return
