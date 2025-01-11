@@ -36,6 +36,12 @@ Gui, Add, ListView, x10 y+20 r40 w800 vProjectList, 类型|名称|目标|快捷键
 ; 从文件加载保存的设置
 LoadSettings()
 
+; 初始化时自动调整列宽
+LV_ModifyCol(1, "AutoHdr")
+LV_ModifyCol(2, "AutoHdr")
+LV_ModifyCol(3, "AutoHdr")
+LV_ModifyCol(4, "AutoHdr")
+
 ; 显示GUI
 Gui, Show, w820 h700, 脚本启动器
 return
@@ -74,7 +80,13 @@ SaveSettings() {
 ; 添加热键
 AddHotkey:
     Gui, Submit, NoHide
-    if (ProjectType && ProjectName && ProjectTarget && ProjectHotkey) {
+    ; 如果没有输入名称，使用目标作为名称
+    if (ProjectTarget && ProjectHotkey) {
+        if (ProjectName = "") {
+            GuiControl,, ProjectName, %ProjectTarget%
+            ProjectName := ProjectTarget
+        }
+        
         ; 构建完整的热键字符串
         fullHotkey := (UseWin ? "#" : "") . ProjectHotkey
         
