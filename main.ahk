@@ -1,6 +1,8 @@
 #SingleInstance Force
 #NoEnv
 SetWorkingDir %A_ScriptDir%
+; ÉèÖÃGUIÄ¬ÈÏ×ÖÌå
+Gui, Font, s10, Î¢ÈíÑÅºÚ
 
 ;icon 
 Menu, Tray, Icon, %A_ScriptDir%\icon.png
