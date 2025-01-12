@@ -227,7 +227,11 @@ EditSelected:
         LV_GetText(type, row, 1)
         LV_GetText(name, row, 2)
         LV_GetText(target, row, 3)
-        LV_GetText(hotkey, row, 4)
+        LV_GetText(fullHotkey, row, 4)
+        
+        ; 先禁用原有热键
+        fn := Func("RunAction").Bind(type, target)
+        Hotkey, %fullHotkey%, Off
         
         ; 将选中项的值填充到输入框中
         GuiControl, Choose, ProjectType, %type%
@@ -235,17 +239,20 @@ EditSelected:
         GuiControl,, ProjectTarget, %target%
         
         ; 处理包含Win键的热键
-        if (InStr(hotkey, "#")) {
+        if (InStr(fullHotkey, "#")) {
             GuiControl,, UseWin, 1
-            StringReplace, hotkey, hotkey, #,
+            StringReplace, baseHotkey, fullHotkey, #,  ; 移除 Win 键标识符
+            GuiControl,, ProjectHotkey, %baseHotkey%
         } else {
             GuiControl,, UseWin, 0
+            GuiControl,, ProjectHotkey, %fullHotkey%
         }
-        GuiControl,, ProjectHotkey, %hotkey%
         
         ; 删除原有项
         LV_Delete(row)
-        Hotkey, %hotkey%, Off
         SaveSettings()
+        
+        ; 重新绑定热键
+        Hotkey, %fullHotkey%, % fn
     }
 return
