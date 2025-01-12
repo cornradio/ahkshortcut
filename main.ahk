@@ -60,6 +60,10 @@ LV_ModifyCol(4, "AutoHdr")
 
 ; 显示GUI
 Gui, Show, w820 h700, 脚本启动器
+
+; 在脚本开头添加（#NoEnv 之后）
+settingsFile := A_ScriptDir . "\settings.ini"
+
 return
 
 ; 加载设置
@@ -92,7 +96,8 @@ SaveSettings() {
         LV_GetText(name, A_Index, 2)
         LV_GetText(target, A_Index, 3)
         LV_GetText(hotkey, A_Index, 4)
-        FileAppend, %type%`t%name%`t%target%`t%hotkey%`n, %settingsFile%
+        ; 使用管道符号(|)替换制表符(\t)作为分隔符
+        FileAppend, %type%|%name%|%target%|%hotkey%`n, %settingsFile%
     }
     GuiControl, +Redraw, ListView
 }
