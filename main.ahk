@@ -269,8 +269,6 @@ return
 
 ; 在文件末尾添加新的标签
 RestartAHK:
-    ; 保存当前设置
-    SaveSettings()
     ; 重启脚本
     Run, %A_AHKPath% "%A_ScriptFullPath%"
     ExitApp
