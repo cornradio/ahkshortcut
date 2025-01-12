@@ -43,9 +43,9 @@ Gui, Add, Edit, x+5 yp-4 w650 vProjectTarget
 Gui, Add, ListView, x10 y+20 r23 w800 vProjectList , 类型|名称|目标|快捷键
 
 ; 再开一行，配置相关按钮
-Gui, Add, Button, x10 y+10 w80 gReloadConfig, 重新加载
-Gui, Add, Button, x+10 yp w80 gOpenConfig, 打开配置
-
+; Gui, Add, Button, x10 y+10 w80 gReloadConfig, 重新加载
+Gui, Add, Button, x10 y+10 w80 gOpenConfig, 打开配置
+Gui, Add, Button, x+10 yp w80 gRestartAHK, 重载配置
 ; ui 部分结束
 
 
@@ -82,15 +82,19 @@ LoadSettings() {
 
 ; 保存设置
 SaveSettings() {
-    FileDelete, settings.ini
-    Loop % LV_GetCount()
-    {
+    global settingsFile
+    
+    FileDelete, %settingsFile%
+    
+    GuiControl, -Redraw, ListView
+    Loop % LV_GetCount() {
         LV_GetText(type, A_Index, 1)
         LV_GetText(name, A_Index, 2)
         LV_GetText(target, A_Index, 3)
         LV_GetText(hotkey, A_Index, 4)
-        FileAppend, %type%|%name%|%target%|%hotkey%`n, settings.ini
+        FileAppend, %type%`t%name%`t%target%`t%hotkey%`n, %settingsFile%
     }
+    GuiControl, +Redraw, ListView
 }
 
 ; 添加热键
@@ -122,12 +126,10 @@ AddHotkey:
             return
         }
         
-        ; 添加到列表视图，使用完整的热键字符串
+        ; 减少刷新延迟
+        GuiControl, -Redraw, ListView  ; 暂时禁用ListView重绘
         LV_Add("", ProjectType, ProjectName, ProjectTarget, fullHotkey)
-        
-        ; 创建热键
-        fn := Func("RunAction").Bind(ProjectType, ProjectTarget)
-        Hotkey, %fullHotkey%, % fn
+        GuiControl, +Redraw, ListView  ; 重新启用ListView重绘
         
         ; 清空输入框
         GuiControl,, ProjectName,
@@ -135,14 +137,7 @@ AddHotkey:
         GuiControl,, ProjectHotkey,
         GuiControl,, UseWin, 0
         
-        ; 自动保存设置
         SaveSettings()
-        
-        ; 调整列宽
-        LV_ModifyCol(1, "AutoHdr")
-        LV_ModifyCol(2, "AutoHdr")
-        LV_ModifyCol(3, "AutoHdr")
-        LV_ModifyCol(4, "AutoHdr")
     }
 return
 
@@ -218,7 +213,11 @@ return
 
 ; 在文件末尾添加新的标签
 OpenConfig:
-    Run, notepad %A_ScriptDir%\settings.ini
+    try {
+        Run, "C:\Users\kasus\AppData\Local\Programs\Microsoft VS Code\Code.exe" "%A_ScriptDir%\settings.ini"  ; 使用系统默认编辑器打开
+    } catch e {
+        Run, notepad "%A_ScriptDir%\settings.ini"  ; 如果失败则使用记事本作为后备选项
+    }
 return
 
 EditSelected:
@@ -252,4 +251,13 @@ EditSelected:
         LV_Delete(row)
         SaveSettings()
     }
+return
+
+; 在文件末尾添加新的标签
+RestartAHK:
+    ; 保存当前设置
+    SaveSettings()
+    ; 重启脚本
+    Run, %A_AHKPath% "%A_ScriptFullPath%"
+    ExitApp
 return
