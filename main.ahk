@@ -251,8 +251,5 @@ EditSelected:
         ; 删除原有项
         LV_Delete(row)
         SaveSettings()
-        
-        ; 重新绑定热键
-        Hotkey, %fullHotkey%, % fn
     }
 return
