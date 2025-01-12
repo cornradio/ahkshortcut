@@ -1,4 +1,6 @@
 # ahkshortcut
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https://github.com/cornradio/ahkshortcut&count_bg=%23F26E00&title_bg=%23000000)](https://hits.seeyoufarm.com)
+
  ahkshortcut tool  
 <img src="https://github.com/user-attachments/assets/f47dfb83-37b0-428a-832b-ba893be90993" width="50%">
 
