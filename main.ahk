@@ -6,10 +6,6 @@ Gui, Font, s10, 微软雅黑
 
 ;icon 
 Menu, Tray, Icon, %A_ScriptDir%\icon.png
-; 设置窗口图标为相同的图标
-Gui, +LastFound +OwnDialogs
-hIcon := LoadPicture(A_ScriptDir "\icon.png", "w32 h32", ErrorLevel)
-SendMessage, 0x80, 1, hIcon  ; 0x80 是 WM_SETICON
 
 ; 添加托盘菜单
 Menu, Tray, NoStandard  ; 移除标准托盘菜单项
@@ -160,16 +156,26 @@ DeleteSelected:
     row := LV_GetNext(0)
     if (row > 0) {
         LV_GetText(hotkey, row, 4)
-        Hotkey, %hotkey%, Off  ; 禁用该热键
+        ; 简单地禁用热键
+        try {
+            Hotkey, %hotkey%, Off
+        }
         LV_Delete(row)
         SaveSettings()
     }
 return
 
+
+
 ; 执行动作
 RunAction(type, target) {
     if (type = "link") {
         Run, %target%
+        ;增加http:// 如果不包含
+        if (InStr(target, "http://") = 0 && InStr(target, "https://") = 0) {
+            target := "http://" target
+            Run, %target%
+        }
     } else if (type = "run") {
         Run, %target%
     } else if (type = "open") {
