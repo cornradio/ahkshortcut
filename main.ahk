@@ -131,6 +131,15 @@ AddHotkey:
             return
         }
         
+        ; 注册新的热键
+        fn := Func("RunAction").Bind(ProjectType, ProjectTarget)
+        try {
+            Hotkey, %fullHotkey%, %fn%
+        } catch e {
+            MsgBox, 16, 错误, 无法注册热键 %fullHotkey%：`n%e%
+            return
+        }
+        
         ; 减少刷新延迟
         GuiControl, -Redraw, ListView  ; 暂时禁用ListView重绘
         LV_Add("", ProjectType, ProjectName, ProjectTarget, fullHotkey)
