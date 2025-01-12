@@ -6,10 +6,16 @@ Gui, Font, s10, 微软雅黑
 
 ;icon 
 Menu, Tray, Icon, %A_ScriptDir%\icon.png
+; 设置窗口图标为相同的图标
+Gui, +LastFound +OwnDialogs
+hIcon := LoadPicture(A_ScriptDir "\icon.png", "w32 h32", ErrorLevel)
+SendMessage, 0x80, 1, hIcon  ; 0x80 是 WM_SETICON
+
 ; 添加托盘菜单
 Menu, Tray, NoStandard  ; 移除标准托盘菜单项
 Menu, Tray, Icon  ; 显示托盘图标
 Menu, Tray, Add, 显示界面, ShowGui  ; 添加显示菜单项
+Menu, Tray, Add, 打开脚本位置, OpenScriptLocation  ; 新增这一行
 Menu, Tray, Add  ; 分隔线
 Menu, Tray, Add, 退出, ExitApp  ; 添加退出菜单项
 Menu, Tray, Default, 显示界面  ; 设置默认菜单项
@@ -27,14 +33,21 @@ Gui, Add, Hotkey, x+5 yp-4 w100 vProjectHotkey
 Gui, Add, Checkbox, x+5 yp+4 vUseWin, Win键
 Gui, Add, Button, x+10 yp-4 w60 gAddHotkey, 添加
 Gui, Add, Button, x+10 yp w80 gDeleteSelected, 删除所选
-Gui, Add, Button, x+10 yp w80 gReloadConfig, 重新加载
+Gui, Add, Button, x+10 yp w80 gEditSelected, 编辑所选
 
 ; 目标输入框单独一行，因为通常需要较长的输入
 Gui, Add, Text, x10 y+15, 目标:
 Gui, Add, Edit, x+5 yp-4 w650 vProjectTarget
 
-; 给表格更多空间
-Gui, Add, ListView, x10 y+20 r40 w800 vProjectList, 类型|名称|目标|快捷键
+; 表格
+Gui, Add, ListView, x10 y+20 r23 w800 vProjectList , 类型|名称|目标|快捷键
+
+; 再开一行，配置相关按钮
+Gui, Add, Button, x10 y+10 w80 gReloadConfig, 重新加载
+Gui, Add, Button, x+10 yp w80 gOpenConfig, 打开配置
+
+; ui 部分结束
+
 
 ; 从文件加载保存的设置
 LoadSettings()
@@ -194,6 +207,45 @@ ReloadConfig:
     LV_ModifyCol(2, "AutoHdr")
     LV_ModifyCol(3, "AutoHdr")
     LV_ModifyCol(4, "AutoHdr")
-    
     MsgBox, 配置已重新加载。
+
+return
+
+; 在文件末尾添加新的标签
+OpenScriptLocation:
+    Run, explore %A_ScriptDir%
+return
+
+; 在文件末尾添加新的标签
+OpenConfig:
+    Run, notepad %A_ScriptDir%\settings.ini
+return
+
+EditSelected:
+    row := LV_GetNext(0)
+    if (row > 0) {
+        LV_GetText(type, row, 1)
+        LV_GetText(name, row, 2)
+        LV_GetText(target, row, 3)
+        LV_GetText(hotkey, row, 4)
+        
+        ; 将选中项的值填充到输入框中
+        GuiControl, Choose, ProjectType, %type%
+        GuiControl,, ProjectName, %name%
+        GuiControl,, ProjectTarget, %target%
+        
+        ; 处理包含Win键的热键
+        if (InStr(hotkey, "#")) {
+            GuiControl,, UseWin, 1
+            StringReplace, hotkey, hotkey, #,
+        } else {
+            GuiControl,, UseWin, 0
+        }
+        GuiControl,, ProjectHotkey, %hotkey%
+        
+        ; 删除原有项
+        LV_Delete(row)
+        Hotkey, %hotkey%, Off
+        SaveSettings()
+    }
 return
