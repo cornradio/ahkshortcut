@@ -130,10 +130,10 @@ AddHotkey:
         Hotkey, %fullHotkey%, % fn
         
         ; 清空输入框
-        GuiControl,, ProjectName
-        GuiControl,, ProjectTarget
-        GuiControl,, ProjectHotkey
-        GuiControl,, UseWin
+        GuiControl,, ProjectName,
+        GuiControl,, ProjectTarget,
+        GuiControl,, ProjectHotkey,
+        GuiControl,, UseWin, 0
         
         ; 自动保存设置
         SaveSettings()
