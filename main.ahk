@@ -31,12 +31,12 @@ Gui, Add, Button, x+10 yp-4 w60 gAddHotkey, 添加
 Gui, Add, Button, x+10 yp w80 gDeleteSelected, 删除所选
 Gui, Add, Button, x+10 yp w80 gEditSelected, 编辑所选
 
-; 目标输入框单独一行，因为通常需要较长的输入
+; 目标输入框改为多行
 Gui, Add, Text, x10 y+15, 目标:
-Gui, Add, Edit, x+5 yp-4 w650 vProjectTarget
+Gui, Add, Edit, x+5 yp-4 w650 h60 vProjectTarget Multi WantReturn
 
 ; 表格
-Gui, Add, ListView, x10 y+20 r23 w800 vProjectList , 类型|名称|目标|快捷键
+Gui, Add, ListView, x10 y+20 r21 w800 vProjectList , 类型|名称|目标|快捷键
 
 ; 再开一行，配置相关按钮
 ; Gui, Add, Button, x10 y+10 w80 gReloadConfig, 重新加载
@@ -72,8 +72,14 @@ LoadSettings() {
                 continue
             fields := StrSplit(A_LoopField, "|")
             if (fields.Length() = 4) {
-                LV_Add("", fields[1], fields[2], fields[3], fields[4])
-                fn := Func("RunAction").Bind(fields[1], fields[3])
+                ; 将 \n 转换回换行符
+                name := fields[2]
+                target := fields[3]
+                StringReplace, name, name, \n, `n, All
+                StringReplace, target, target, \n, `n, All
+                
+                LV_Add("", fields[1], name, target, fields[4])
+                fn := Func("RunAction").Bind(fields[1], target)
                 Hotkey, % fields[4], % fn
             }
         }
@@ -92,7 +98,14 @@ SaveSettings() {
         LV_GetText(name, A_Index, 2)
         LV_GetText(target, A_Index, 3)
         LV_GetText(hotkey, A_Index, 4)
-        ; 使用管道符号(|)替换制表符(\t)作为分隔符
+        
+        ; 将换行符替换为 \n
+        StringReplace, name, name, `r`n, \n, All
+        StringReplace, name, name, `n, \n, All
+        StringReplace, target, target, `r`n, \n, All
+        StringReplace, target, target, `n, \n, All
+        
+        ; 使用管道符号(|)作为分隔符
         FileAppend, %type%|%name%|%target%|%hotkey%`n, %settingsFile%
     }
     GuiControl, +Redraw, ListView
