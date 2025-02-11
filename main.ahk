@@ -4,8 +4,13 @@ SetWorkingDir %A_ScriptDir%
 ; 设置GUI默认字体
 Gui, Font, s10, 微软雅黑
 
-;icon 
-Menu, Tray, Icon, %A_ScriptDir%\icon.png
+; 设置窗口和托盘图标
+Menu, Tray, Icon, %A_ScriptDir%\icon.ico
+Gui +LastFound  ; 设置当前窗口为最后找到的窗口
+hWnd := WinExist()
+hIcon := DllCall("LoadImage", uint, 0, str, A_ScriptDir "\icon.ico", uint, 1, int, 0, int, 0, uint, 0x10)
+SendMessage, 0x80, 0, hIcon  ; 设置大图标 (0)
+SendMessage, 0x80, 1, hIcon  ; 设置小图标 (1)
 
 ; 添加托盘菜单
 Menu, Tray, NoStandard  ; 移除标准托盘菜单项
@@ -36,7 +41,7 @@ Gui, Add, Text, x10 y+15, 目标:
 Gui, Add, Edit, x+5 yp-4 w650 h60 vProjectTarget Multi WantReturn
 
 ; 表格
-Gui, Add, ListView, x10 y+20 r21 w800 vProjectList , 类型|名称|目标|快捷键
+Gui, Add, ListView, x10 y+20 r21 w800 vProjectList gListViewDoubleClick, 类型|名称|目标|快捷键
 
 ; 再开一行，配置相关按钮
 ; Gui, Add, Button, x10 y+10 w80 gReloadConfig, 重新加载
@@ -55,7 +60,7 @@ LV_ModifyCol(3, "AutoHdr")
 LV_ModifyCol(4, "AutoHdr")
 
 ; 显示GUI
-Gui, Show, w820 h700, 脚本启动器
+Gui, Show, w820 h700 Hide, 脚本启动器  ; 添加 Hide 参数，使窗口初始隐藏
 
 ; 在脚本开头添加（#NoEnv 之后）
 settingsFile := A_ScriptDir . "\settings.ini"
@@ -291,4 +296,16 @@ RestartAHK:
     ; 重启脚本
     Run, %A_AHKPath% "%A_ScriptFullPath%"
     ExitApp
+return
+
+; 处理ListView双击事件
+ListViewDoubleClick:
+    if (A_GuiEvent = "DoubleClick") {
+        row := A_EventInfo
+        if (row > 0) {
+            LV_GetText(type, row, 1)
+            LV_GetText(target, row, 3)
+            RunAction(type, target)
+        }
+    }
 return
