@@ -5,7 +5,8 @@ SetWorkingDir %A_ScriptDir%
 Gui, Font, s10, 微软雅黑
 
 ; 设置窗口和托盘图标
-Menu, Tray, Icon, %A_ScriptDir%\icon.ico
+; Menu, Tray, Icon, %A_ScriptDir%\icon.ico
+Menu, Tray, Icon, shell32.dll, 264 ; shortcut
 Gui +LastFound  ; 设置当前窗口为最后找到的窗口
 hWnd := WinExist()
 hIcon := DllCall("LoadImage", uint, 0, str, A_ScriptDir "\icon.ico", uint, 1, int, 0, int, 0, uint, 0x10)
@@ -38,15 +39,15 @@ Gui, Add, Button, x+10 yp w80 gEditSelected, 编辑所选
 
 ; 目标输入框改为多行
 Gui, Add, Text, x10 y+15, 目标:
-Gui, Add, Edit, x+5 yp-4 w650 h60 vProjectTarget Multi WantReturn
-
-; 表格
-Gui, Add, ListView, x10 y+20 r21 w800 vProjectList gListViewDoubleClick, 类型|名称|目标|快捷键
+Gui, Add, Edit, x+5 yp w650 h60 vProjectTarget Multi WantReturn
 
 ; 再开一行，配置相关按钮
 ; Gui, Add, Button, x10 y+10 w80 gReloadConfig, 重新加载
-Gui, Add, Button, x10 y+10 w80 gOpenConfig, 打开配置
-Gui, Add, Button, x+10 yp w80 gRestartAHK, 重载配置
+Gui, Add, Button, x+10 yp w80 gOpenConfig, 打开配置
+Gui, Add, Button, xp y+5 w80 gRestartAHK, 重载配置
+; 表格
+Gui, Add, ListView, x10 y+15 r10 w800 vProjectList gListViewDoubleClick, 类型|名称|目标|快捷键
+
 ; ui 部分结束
 
 
@@ -60,7 +61,7 @@ LV_ModifyCol(3, "AutoHdr")
 LV_ModifyCol(4, "AutoHdr")
 
 ; 显示GUI
-Gui, Show, w820 h700 Hide, 脚本启动器  ; 添加 Hide 参数，使窗口初始隐藏
+Gui, Show, w820 h400 Hide, 脚本启动器  ; 添加 Hide 参数，使窗口初始隐藏
 
 ; 在脚本开头添加（#NoEnv 之后）
 settingsFile := A_ScriptDir . "\settings.ini"
