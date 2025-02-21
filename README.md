@@ -2,8 +2,9 @@
 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https://github.com/cornradio/ahkshortcut&count_bg=%23F26E00&title_bg=%23000000)](https://hits.seeyoufarm.com)
 
 一个简单易用的快捷键注册和管理工具，基于 AutoHotkey 开发。通过图形界面，轻松设置和管理各种快捷键操作，如打开网页、运行程序、打开文件夹、发送文本等。
+![image](https://github.com/user-attachments/assets/c5279ff7-09fd-425b-a061-a1eb8bbc50e1)
 
-<img src="https://github.com/user-attachments/assets/f47dfb83-37b0-428a-832b-ba893be90993" width="50%">
+
 
 ## 功能特点
 
