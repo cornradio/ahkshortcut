@@ -14,7 +14,10 @@ class ShortcutUI {
     static ReloadBtn := 0
     static SettingsBtn := 0
     static SearchEdit := 0
+    static SearchText := 0
     static ExpandBtn := 0
+    static FooterText := 0
+    static GithubBtnMain := 0
 
     ; Data store
     static AllItems := []
@@ -68,9 +71,14 @@ class ShortcutUI {
         this.LV.OnEvent("DoubleClick", (LV_Obj, RowNum) => ShortcutUI.ListViewDoubleClick(LV_Obj, RowNum))
 
         ; Search Filter (At the very bottom)
-        this.MainGui.Add("Text", "x10 y+10", "Filter:")
+        this.SearchText := this.MainGui.Add("Text", "x10 y+10", "Filter:")
         this.SearchEdit := this.MainGui.Add("Edit", "x+5 yp-4 w200")
         this.SearchEdit.OnEvent("Change", (*) => this.RefreshListView())
+
+        ; Footer Info (Bottom Right)
+        this.FooterText := this.MainGui.Add("Text", "Center", "@cornradio v2.0")
+        this.GithubBtnMain := this.MainGui.Add("Button", "w60 h24", "GitHub")
+        this.GithubBtnMain.OnEvent("Click", (*) => Run("https://github.com/cornradio/ahkshortcut"))
 
         ; Window events
         this.MainGui.OnEvent("Close", (*) => this.MainGui.Hide())
@@ -178,10 +186,6 @@ class ShortcutUI {
         btnCancel := settingsGui.Add("Button", "x+10 yp w80", "Cancel")
         btnCancel.OnEvent("Click", (*) => settingsGui.Destroy())
 
-        settingsGui.Add("Text", "x10 y+10", "@cornradio v2.0 2026/01/11")
-        githubBtn := settingsGui.Add("Button", "x10 y+5 w80", "GitHub")
-        githubBtn.OnEvent("Click", (*) => Run("https://github.com/cornradio/ahkshortcut"))
-
         settingsGui.Show()
     }
 
@@ -241,7 +245,11 @@ class ShortcutUI {
         this.ReloadBtn.Move(Width - 110)
         this.SettingsBtn.Move(Width - 34, 10)
         this.LV.Move(, , Width - 20, Height - 180)
-        this.SearchEdit.Move(, Height - 35)
+        this.SearchText.Move(, Height - 30)
+        this.SearchEdit.Move(, Height - 34)
+
+        this.FooterText.Move(Width - 220, Height - 30, 150)
+        this.GithubBtnMain.Move(Width - 70, Height - 34)
     }
 
     static Toggle(*) {
