@@ -1,4 +1,4 @@
-# AHK Shortcut
+# <img src="icon.png" width="20"> AHK Shortcut
 
 [![HitCount](https://hits.dwyl.com/cornradio/ahkshortcut.svg?style=flat-square)](https://hits.dwyl.com/cornradio/ahkshortcut) （ seeyoufarm hits 没有了现在重新计数了）
 
