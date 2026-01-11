@@ -15,6 +15,7 @@ AHK Shortcut 是快捷键管理工具，通过图形界面，轻松设置和管�
   - `run`: 运行程序或命令
   - `open`: 打开文件夹
   - `send`: 发送文本
+  - `ahk`: 执行 AHK v2 代码 (例如 `Send(FormatTime(, "yyyy-MM-dd HH:mm:ss"))`)
 - 💡 直观的图形界面
 - 🔄 支持自行备份配置文件、可以快速的迁移快捷键到其他电脑
 

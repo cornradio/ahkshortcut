@@ -10,6 +10,7 @@ SetWorkingDir(A_ScriptDir)
 #Include Lib\Config.ahk
 #Include Lib\Hotkeys.ahk
 #Include Lib\UI.ahk
+#Include Lib\Eval.ahk
 
 ; --- Tray Menu Settings ---
 A_TrayMenu.Delete()

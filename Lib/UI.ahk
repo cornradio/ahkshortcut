@@ -12,7 +12,7 @@ class ShortcutUI {
     static WinCheck := 0
     static ConfigBtn := 0
     static ReloadBtn := 0
-    static SettingsBtn := 0 
+    static SettingsBtn := 0
 
     ; Global App settings/state
     static CurrentAppHotkey := ""
@@ -24,7 +24,7 @@ class ShortcutUI {
 
         ; Row 1: Type, Name, Hotkey
         this.MainGui.Add("Text", "x10 y15", "Type:")
-        this.TypeDDL := this.MainGui.Add("DropDownList", "x+5 yp-4 w80 Choose1", ["link", "run", "open", "send"])
+        this.TypeDDL := this.MainGui.Add("DropDownList", "x+5 yp-4 w80 Choose1", ["link", "run", "open", "send", "ahk"])
 
         this.MainGui.Add("Text", "x+20 yp+4", "Name:")
         this.NameEdit := this.MainGui.Add("Edit", "x+5 yp-4 w120")
@@ -80,7 +80,7 @@ class ShortcutUI {
             this.LV.ModifyCol(4, "AutoHdr") ; Target
             this.LV.ModifyCol(5, 0) ; Hidden RawHotkey
         }
-        
+
         if !this.HideOnLaunch {
             this.Show()
         }
@@ -104,9 +104,10 @@ class ShortcutUI {
         ; If ListView is focused, treat as "Edit"
         if (focusedCtrl.Hwnd == this.LV.Hwnd) {
             this.EditSelected()
-        } 
+        }
         ; If an Edit or Hotkey control is focused, treat as "Add"
-        else if (InStr(focusedCtrl.Type, "Edit") || InStr(focusedCtrl.Type, "Hotkey") || InStr(focusedCtrl.Type, "ComboBox") || InStr(focusedCtrl.Type, "List")) {
+        else if (InStr(focusedCtrl.Type, "Edit") || InStr(focusedCtrl.Type, "Hotkey") || InStr(focusedCtrl.Type,
+            "ComboBox") || InStr(focusedCtrl.Type, "List")) {
             this.AddHotkey()
         }
     }
@@ -136,7 +137,8 @@ class ShortcutUI {
         launchChk.Value := this.HideOnLaunch
 
         btnSave := settingsGui.Add("Button", "x10 y+10 w80 Default", "Save")
-        btnSave.OnEvent("Click", (*) => this.SaveSettingsFromPopup(settingsGui, hkCtrl.Value, winChk.Value, launchChk.Value))
+        btnSave.OnEvent("Click", (*) => this.SaveSettingsFromPopup(settingsGui, hkCtrl.Value, winChk.Value, launchChk.Value
+        ))
 
         btnCancel := settingsGui.Add("Button", "x+10 yp w80", "Cancel")
         btnCancel.OnEvent("Click", (*) => settingsGui.Destroy())
@@ -190,11 +192,11 @@ class ShortcutUI {
     static OnSize(GuiObj, MinMax, Width, Height) {
         if (MinMax = -1)
             return
-        this.TargetEdit.Move(,, Width - 190) 
+        this.TargetEdit.Move(, , Width - 190)
         this.ConfigBtn.Move(Width - 110)
         this.ReloadBtn.Move(Width - 110)
-        this.SettingsBtn.Move(Width - 34, 10) 
-        this.LV.Move(,, Width - 20, Height - 140)
+        this.SettingsBtn.Move(Width - 34, 10)
+        this.LV.Move(, , Width - 20, Height - 140)
     }
 
     static Toggle(*) {
@@ -249,7 +251,7 @@ class ShortcutUI {
     static DeleteSelected() {
         row := this.LV.GetNext()
         if (row > 0) {
-            hotkeyStr := this.LV.GetText(row, 5) 
+            hotkeyStr := this.LV.GetText(row, 5)
             HotkeyManager.Unregister(hotkeyStr)
             this.LV.Delete(row)
             ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
@@ -279,7 +281,7 @@ class ShortcutUI {
             HotkeyManager.Unregister(fullHotkey)
             this.LV.Delete(row)
             ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
-            
+
             ; Focus on Name field for quick editing
             this.NameEdit.Focus()
         }

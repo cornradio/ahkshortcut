@@ -36,5 +36,8 @@ RunAction(type, target, *) {
 
         case "send":
             SendInput(target)
+
+        case "ahk":
+            RunAhkCode(target)
     }
 }
