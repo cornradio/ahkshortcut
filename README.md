@@ -1,11 +1,11 @@
-# AHK Shortcut Manager
-[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https://github.com/cornradio/ahkshortcut&count_bg=%23F26E00&title_bg=%23000000)](https://hits.seeyoufarm.com)
+# AHK Shortcut
 
-一个简单易用的快捷键注册和管理工具，基于 AutoHotkey 开发。通过图形界面，轻松设置和管理各种快捷键操作，如打开网页、运行程序、打开文件夹、发送文本等。
-
-![image](https://github.com/user-attachments/assets/e4bc7810-e829-446a-82be-c3d5b935d612)
+[![HitCount](https://hits.dwyl.com/cornradio/ahkshortcut.svg?style=flat-square)](https://hits.dwyl.com/cornradio/ahkshortcut) （ seeyoufarm hits 没有了现在重新计数了）
 
 
+AHK Shortcut 是快捷键管理工具，通过图形界面，轻松设置和管理各种快捷键操作，如打开网页、运行程序、打开文件夹、发送文本等。
+
+![alt text](image.png)
 
 
 ## 功能特点
@@ -15,44 +15,46 @@
   - `run`: 运行程序或命令
   - `open`: 打开文件夹
   - `send`: 发送文本
-- 💡 简单的图形界面，无需编写代码
-- 🔧 支持 Win 键组合
-- 💾 自动保存配置
-- 🔄 支持手动重载配置文件
+- 💡 直观的图形界面
+- 🔄 支持自行备份配置文件、可以快速的迁移快捷键到其他电脑
 
-## 安装使用
+## 安装
 
-1. 安装前提
-   - 下载并安装 [AutoHotkey v1.1](https://www.autohotkey.com/)
+1. 前提
+   - 下载并安装 [AutoHotkey v2.0](https://www.autohotkey.com/download/ahk-v2.exe)
 
 2. 下载本项目
-   - 下载并解压本项目文件
+   - 下载并解压本项目文件到任何文件夹
 
 3. 运行程序
-   - 双击运行 `main.ahk`
-   - 程序会在系统托盘显示图标
+   - 双击运行 `ahkshortcut.ahk`
 
-## 使用说明
+## 使用
 
 1. 添加快捷键
-   - 选择操作类型
-   - 输入名称（可选）
-   - 设置快捷键组合
-   - 输入目标（网址/程序路径/文件夹/文本）
-   - 点击"添加"按钮
+   - 选择操作类型Type
+   - 输入名称Name（可选）
+   - 设置快捷键组合Hotkey (点击输入框直接录制,由于系统限制，不支持录制win,**所以需要手动勾选WinKey**)
+   - 输入Target（网址link/程序路径run/文件夹open/文本send）
+   - 点击"Add"按钮 添加快捷键
 
 2. 管理快捷键
-   - 编辑：选中项目后点击"编辑所选"
-   - 删除：选中项目后点击"删除所选"
-   - 配置：点击"打开配置"可直接编辑配置文件，修改配置文件可以更高效地管理快捷键
+   - 编辑：选中项目后点击"Edit"编辑快捷键,编辑后需要点击"Add"按钮保存
+     - tip : 可以直接选中列表中的某个快捷键,按Enter键编辑快捷键
+   - 删除：选中项目后点击"Delete"删除快捷键
+
+3. 设置
+   - 点击右上角设置按钮打开设置窗口
+   - 设置全局快捷键(展示/隐藏快捷键管理器)
+   - 设置是否启动时隐藏（Hide on Launch）
+
 
 ## 相关推荐
 
-如果你喜欢这个工具，也可以看看这些相关项目：
+如果你喜欢这个工具，你肯定是一个快捷键大师，也可以看看这些工具：
 
-- [Alt-Mouse-Window-Control](https://github.com/hzhbest/Alt-Mouse-Window-Control) - 使用 Alt+鼠标调整窗口
-- [AHKShortcutLikeMac](https://github.com/m2nlight/AHKShortcutLikeMac) - 类 Mac 快捷键
-- [lightspeed-UI](https://github.com/cornradio/lightspeed-UI) - 另一个快捷键启动工具
+- [Alt-Drag](https://github.com/cornradio/alt-drag-mac) - 使用 Alt+鼠标调整窗口位置和大小
+- [lightspeed-UI](https://github.com/cornradio/lightspeed-UI) - 管理程序、使用快捷键启动程序和文件夹
 
 ## 许可证
 

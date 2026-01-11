@@ -12,10 +12,11 @@ class ShortcutUI {
     static WinCheck := 0
     static ConfigBtn := 0
     static ReloadBtn := 0
-    static GbBtn := 0
+    static SettingsBtn := 0 
 
-    ; Global App Hotkey state
+    ; Global App settings/state
     static CurrentAppHotkey := ""
+    static HideOnLaunch := false
 
     static Create() {
         this.MainGui := Gui("+LastFound +Resize +MinSize850x400", "AHK Shortcut v2")
@@ -33,13 +34,16 @@ class ShortcutUI {
         this.WinCheck := this.MainGui.Add("Checkbox", "x+5 yp+4", "Win Key")
 
         ; Row 1 Buttons
-        this.MainGui.Add("Button", "x+10 yp-4 w60 Default", "Add").OnEvent("Click", (*) => ShortcutUI.AddHotkey())
+        this.MainGui.Add("Button", "x+10 yp-4 w60", "Add").OnEvent("Click", (*) => ShortcutUI.AddHotkey())
         this.MainGui.Add("Button", "x+10 yp w80", "Delete").OnEvent("Click", (*) => ShortcutUI.DeleteSelected())
         this.MainGui.Add("Button", "x+10 yp w80", "Edit").OnEvent("Click", (*) => ShortcutUI.EditSelected())
 
-        ; "Gb" Global Settings Button (Placed at top right eventually via OnSize)
-        this.GbBtn := this.MainGui.Add("Button", "x+10 yp w40", "Gb")
-        this.GbBtn.OnEvent("Click", (*) => ShortcutUI.ShowSettingsPopup())
+        ; Hidden Default Button to handle "Enter" key smartly
+        this.MainGui.Add("Button", "x0 y0 w0 h0 +Default", "HiddenEnter").OnEvent("Click", (*) => ShortcutUI.OnEnterPressed())
+
+        ; Settings Button (Strict Top Right, Small Square)
+        this.SettingsBtn := this.MainGui.Add("Button", "w24 h24", "🛠")
+        this.SettingsBtn.OnEvent("Click", (*) => ShortcutUI.ShowSettingsPopup())
 
         ; Row 2: Target
         this.MainGui.Add("Text", "x10 y+15", "Target:")
@@ -51,7 +55,7 @@ class ShortcutUI {
         this.ReloadBtn := this.MainGui.Add("Button", "xp y+5 w100", "Hard Reload")
         this.ReloadBtn.OnEvent("Click", (*) => ShortcutUI.RestartApp())
 
-        ; Table: [Type, Name, Hotkey, Target, RawHotkey]
+        ; Table
         this.LV := this.MainGui.Add("ListView", "x10 y+15 r12 w800", ["Type", "Name", "Hotkey", "Target", "Raw"])
         this.LV.OnEvent("DoubleClick", (LV_Obj, RowNum) => ShortcutUI.ListViewDoubleClick(LV_Obj, RowNum))
 
@@ -61,10 +65,12 @@ class ShortcutUI {
         this.MainGui.OnEvent("Size", (GuiObj, MinMax, Width, Height) => this.OnSize(GuiObj, MinMax, Width, Height))
 
         ; Initialize
-        savedAppHotkey := ConfigManager.Load(this.LV, HotkeyManager)
-        if (savedAppHotkey != "") {
-            this.CurrentAppHotkey := savedAppHotkey
-            this.RegisterAppHotkey(savedAppHotkey)
+        loadedSettings := ConfigManager.Load(this.LV, HotkeyManager)
+        this.HideOnLaunch := loadedSettings.hideOnLaunch
+
+        if (loadedSettings.appHotkey != "") {
+            this.CurrentAppHotkey := loadedSettings.appHotkey
+            this.RegisterAppHotkey(loadedSettings.appHotkey)
         }
 
         try {
@@ -73,6 +79,10 @@ class ShortcutUI {
             this.LV.ModifyCol(3, 150) ; Hotkey
             this.LV.ModifyCol(4, "AutoHdr") ; Target
             this.LV.ModifyCol(5, 0) ; Hidden RawHotkey
+        }
+        
+        if !this.HideOnLaunch {
+            this.Show()
         }
     }
 
@@ -83,13 +93,30 @@ class ShortcutUI {
         }
     }
 
+    /**
+     * Smart Enter Key Handler
+     */
+    static OnEnterPressed() {
+        focusedCtrl := this.MainGui.FocusedCtrl
+        if !focusedCtrl
+            return
+
+        ; If ListView is focused, treat as "Edit"
+        if (focusedCtrl.Hwnd == this.LV.Hwnd) {
+            this.EditSelected()
+        } 
+        ; If an Edit or Hotkey control is focused, treat as "Add"
+        else if (InStr(focusedCtrl.Type, "Edit") || InStr(focusedCtrl.Type, "Hotkey") || InStr(focusedCtrl.Type, "ComboBox") || InStr(focusedCtrl.Type, "List")) {
+            this.AddHotkey()
+        }
+    }
+
     static ShowSettingsPopup() {
         settingsGui := Gui("+Owner" . this.MainGui.Hwnd . " +ToolWindow", "Global Settings")
         settingsGui.SetFont("s10", "Segoe UI")
 
         settingsGui.Add("Text", "x10 y15", "Set Global App Show Hotkey:")
 
-        ; Pre-fill current state
         hotkeyStr := this.CurrentAppHotkey
         parsedKey := ""
         useWin := 0
@@ -105,47 +132,42 @@ class ShortcutUI {
         winChk := settingsGui.Add("Checkbox", "x+10 yp+4", "Win Key")
         winChk.Value := useWin
 
-        btnSave := settingsGui.Add("Button", "x10 y+20 w80 Default", "Save")
-        btnSave.OnEvent("Click", (*) => this.SaveAppHotkeyFromPopup(settingsGui, hkCtrl.Value, winChk.Value))
+        launchChk := settingsGui.Add("Checkbox", "x10 y+15", "Hide on Launch")
+        launchChk.Value := this.HideOnLaunch
+
+        btnSave := settingsGui.Add("Button", "x10 y+10 w80 Default", "Save")
+        btnSave.OnEvent("Click", (*) => this.SaveSettingsFromPopup(settingsGui, hkCtrl.Value, winChk.Value, launchChk.Value))
 
         btnCancel := settingsGui.Add("Button", "x+10 yp w80", "Cancel")
         btnCancel.OnEvent("Click", (*) => settingsGui.Destroy())
 
+        settingsGui.Add("Text", "x10 y+10", "@cornradio v2.0 2026/01/11")
+        githubBtn := settingsGui.Add("Button", "x10 y+5 w80", "GitHub")
+        githubBtn.OnEvent("Click", (*) => Run("https://github.com/cornradio/ahkshortcut"))
+
         settingsGui.Show()
     }
 
-    static SaveAppHotkeyFromPopup(parentGui, key, useWin) {
-        if (key = "") {
-            if (this.CurrentAppHotkey != "") {
-                Hotkey(this.CurrentAppHotkey, "Off")
-                this.CurrentAppHotkey := ""
-                ConfigManager.Save(this.LV, "")
-                MsgBox("Global Hotkey cleared.")
-            }
-        } else {
-            newHotkey := (useWin ? "#" : "") . key
-            try {
+    static SaveSettingsFromPopup(parentGui, key, useWin, hideLaunch) {
+        newHotkey := (key != "") ? (useWin ? "#" : "") . key : ""
+        if (this.CurrentAppHotkey != newHotkey) {
+            if (this.CurrentAppHotkey != "")
+                try Hotkey(this.CurrentAppHotkey, "Off")
+            this.CurrentAppHotkey := newHotkey
+            if (newHotkey != "")
                 this.RegisterAppHotkey(newHotkey)
-                this.CurrentAppHotkey := newHotkey
-                ConfigManager.Save(this.LV, newHotkey)
-                MsgBox("Global App Hotkey set to: " . newHotkey)
-            } catch Error as e {
-                MsgBox("Failed to set Global Hotkey: " . e.Message)
-                return
-            }
         }
+        this.HideOnLaunch := hideLaunch
+        ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
         parentGui.Destroy()
+        MsgBox("Settings saved.")
     }
 
-    ; Utility to convert AHK hotkey symbols to human readable text
     static ToHuman(hk) {
         if (hk = "")
             return ""
-        
         human := ""
         workHk := hk
-        
-        ; Replace modifiers
         if InStr(workHk, "#") {
             human .= "Win + "
             workHk := StrReplace(workHk, "#", "")
@@ -162,37 +184,31 @@ class ShortcutUI {
             human .= "Shift + "
             workHk := StrReplace(workHk, "+", "")
         }
-        
-        ; Append the actual key
-        human .= workHk
-        return human
+        return human . StrUpper(workHk)
     }
 
-    ;anchor logic
     static OnSize(GuiObj, MinMax, Width, Height) {
         if (MinMax = -1)
             return
-
-        ; Resize Target Edit (Label starts at 10, Edit at approx 65)
-        ; We want it to end before the buttons (which start at Width - 110)
         this.TargetEdit.Move(,, Width - 190) 
-
-        ; Move Config/Reload/Gb Buttons to the right (10px margin)
-        ; GbBtn width is 40 -> Width - 50
-        ; Config/Reload width is 100 -> Width - 110
         this.ConfigBtn.Move(Width - 110)
         this.ReloadBtn.Move(Width - 110)
-        this.GbBtn.Move(Width - 50) 
-
-        ; Resize ListView (140 is the fixed height of top controls)
+        this.SettingsBtn.Move(Width - 34, 10) 
         this.LV.Move(,, Width - 20, Height - 140)
     }
 
-    static RegisterAppHotkey(hotkeyStr) {
-        if (this.CurrentAppHotkey != "") {
-            try Hotkey(this.CurrentAppHotkey, "Off")
+    static Toggle(*) {
+        if !this.MainGui
+            return
+        if WinActive("ahk_id " this.MainGui.Hwnd) {
+            this.MainGui.Hide()
+        } else {
+            this.Show()
         }
-        Hotkey(hotkeyStr, (*) => ShortcutUI.Show(), "On")
+    }
+
+    static RegisterAppHotkey(hotkeyStr) {
+        Hotkey(hotkeyStr, (*) => ShortcutUI.Toggle(), "On")
     }
 
     static AddHotkey() {
@@ -203,7 +219,7 @@ class ShortcutUI {
         useWin := this.WinCheck.Value
 
         if (target = "" || key = "") {
-            MsgBox("Target and Hotkey cannot be empty", "Reminder")
+            MsgBox("Target and Hotkey cannot be empty")
             return
         }
 
@@ -213,15 +229,13 @@ class ShortcutUI {
         fullHotkey := (useWin ? "#" : "") . key
 
         loop this.LV.GetCount() {
-            ; Check against raw hotkey in col 5
             if (this.LV.GetText(A_Index, 5) = fullHotkey) {
-                MsgBox("Hotkey already in use.", "Conflict")
+                MsgBox("Hotkey already in use.")
                 return
             }
         }
 
         HotkeyManager.Register(fullHotkey, type, target)
-        ; Add to LV: [Type, Name, Hotkey(Human), Target, RawHotkey]
         this.LV.Add("", type, name, this.ToHuman(fullHotkey), target, fullHotkey)
         this.LV.ModifyCol()
 
@@ -229,16 +243,16 @@ class ShortcutUI {
         this.TargetEdit.Value := ""
         this.HotkeyCtrl.Value := ""
         this.WinCheck.Value := 0
-        ConfigManager.Save(this.LV, this.CurrentAppHotkey)
+        ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
     }
 
     static DeleteSelected() {
         row := this.LV.GetNext()
         if (row > 0) {
-            hotkeyStr := this.LV.GetText(row, 5) ; RawHotkey is at 5
+            hotkeyStr := this.LV.GetText(row, 5) 
             HotkeyManager.Unregister(hotkeyStr)
             this.LV.Delete(row)
-            ConfigManager.Save(this.LV, this.CurrentAppHotkey)
+            ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
         }
     }
 
@@ -247,7 +261,6 @@ class ShortcutUI {
         if (row > 0) {
             type := this.LV.GetText(row, 1)
             name := this.LV.GetText(row, 2)
-            ; Hotkey human is at 3, Target is at 4, Raw is at 5
             target := this.LV.GetText(row, 4)
             fullHotkey := this.LV.GetText(row, 5)
 
@@ -265,18 +278,21 @@ class ShortcutUI {
 
             HotkeyManager.Unregister(fullHotkey)
             this.LV.Delete(row)
-            ConfigManager.Save(this.LV, this.CurrentAppHotkey)
+            ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
+            
+            ; Focus on Name field for quick editing
+            this.NameEdit.Focus()
         }
     }
 
     static ListViewDoubleClick(LV_Obj, RowNum) {
         if (RowNum > 0) {
             type := LV_Obj.GetText(RowNum, 1)
-            target := LV_Obj.GetText(RowNum, 4) ; Target is now at 4
+            target := LV_Obj.GetText(RowNum, 4)
 
             if (type == "send") {
                 A_Clipboard := target
-                ToolTip("Copied to clipboard!")
+                ToolTip("Copied!")
                 SetTimer(() => ToolTip(), -2000)
             } else {
                 RunAction(type, target)
@@ -286,16 +302,12 @@ class ShortcutUI {
 
     static OpenConfig() {
         if FileExist(ConfigManager.FilePath) {
-            try {
-                Run('notepad.exe "' ConfigManager.FilePath '"')
-            } catch {
-                MsgBox("Cannot open settings.ini", "Error")
-            }
+            try Run('notepad.exe "' ConfigManager.FilePath '"')
         }
     }
 
     static RestartApp() {
-        ConfigManager.Save(this.LV, this.CurrentAppHotkey)
+        ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
         Reload()
     }
 }
