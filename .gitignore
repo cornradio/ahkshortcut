@@ -1,3 +1,4 @@
+# 忽略所有 ini
 *.ini
-settings - 副本.ini
-settings - bak.ini
+# 允许某一个 ini 被记录
+!settings-demo.ini

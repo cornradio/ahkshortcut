@@ -1,7 +1,29 @@
 #Requires AutoHotkey v2.0
 
 class ConfigManager {
+    static MasterConfig := A_ScriptDir "\.active_ini"
     static FilePath := A_ScriptDir "\settings.ini"
+
+    static Init() {
+        if FileExist(this.MasterConfig) {
+            activeName := FileRead(this.MasterConfig, "UTF-8")
+            if (activeName != "" && FileExist(A_ScriptDir "\" activeName)) {
+                this.FilePath := A_ScriptDir "\" activeName
+            }
+        }
+    }
+
+    static GetActiveName() {
+        SplitPath(this.FilePath, &name)
+        return name
+    }
+
+    static SetActiveName(name) {
+        this.FilePath := A_ScriptDir "\" name
+        if FileExist(this.MasterConfig)
+            FileDelete(this.MasterConfig)
+        FileAppend(name, this.MasterConfig, "UTF-8")
+    }
 
     /**
      * Load settings from file to ListView

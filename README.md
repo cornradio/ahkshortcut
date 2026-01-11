@@ -5,7 +5,7 @@
 
 AHK Shortcut 是快捷键管理工具，通过图形界面，轻松设置和管理各种快捷键操作，如打开网页、运行程序、打开文件夹、发送文本等。
 
-![alt text](image.png)
+![alt text](image-1.png)
 
 
 ## 功能特点
@@ -18,6 +18,7 @@ AHK Shortcut 是快捷键管理工具，通过图形界面，轻松设置和管�
   - `ahk`: 执行 AHK v2 代码 (例如 `Send(FormatTime(, "yyyy-MM-dd HH:mm:ss"))`)
 - 💡 直观的图形界面
 - 🔄 支持自行备份配置文件、可以快速的迁移快捷键到其他电脑
+- 📄 提供 `settings-demo.example` 作为配置参考例子
 
 ## 安装
 

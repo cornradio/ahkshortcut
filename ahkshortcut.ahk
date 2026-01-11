@@ -30,6 +30,7 @@ if FileExist(A_ScriptDir "\icon.ico") {
 
 ; --- Initialize GUI ---
 try {
+    ConfigManager.Init()
     ShortcutUI.Create()
     ShortcutUI.Show() ; Force show on start for debugging
 } catch Error as e {

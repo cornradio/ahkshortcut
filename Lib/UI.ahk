@@ -14,6 +14,7 @@ class ShortcutUI {
     static ReloadBtn := 0
     static SettingsBtn := 0
     static SearchEdit := 0
+    static ExpandBtn := 0
 
     ; Data store
     static AllItems := []
@@ -51,13 +52,16 @@ class ShortcutUI {
 
         ; Row 2: Target
         this.MainGui.Add("Text", "x10 y+15", "Target:")
-        this.TargetEdit := this.MainGui.Add("Edit", "x+5 yp w630 r3 Multi WantReturn")
+        this.ExpandBtn := this.MainGui.Add("Button", "x10 y+5 w45 h24", "Full")
+        this.ExpandBtn.OnEvent("Click", (*) => ShortcutUI.ShowExpandEditor())
+        this.TargetEdit := this.MainGui.Add("Edit", "x+5 y50 w630 r3 Multi WantReturn")
 
         ; Config buttons
         this.ConfigBtn := this.MainGui.Add("Button", "x+10 yp w100", "Edit Config")
         this.ConfigBtn.OnEvent("Click", (*) => ShortcutUI.OpenConfig())
         this.ReloadBtn := this.MainGui.Add("Button", "xp y+5 w100", "Hard Reload")
         this.ReloadBtn.OnEvent("Click", (*) => ShortcutUI.RestartApp())
+        this.ReloadBtn.OnEvent("ContextMenu", (*) => ShortcutUI.RestartApp(false))
 
         ; Table
         this.LV := this.MainGui.Add("ListView", "x10 y+15 r12 w800", ["Type", "Name", "Hotkey", "Target", "Raw"])
@@ -149,9 +153,27 @@ class ShortcutUI {
         launchChk := settingsGui.Add("Checkbox", "x10 y+15", "Hide on Launch")
         launchChk.Value := this.HideOnLaunch
 
+        ; --- Separator ---
+        settingsGui.Add("Text", "x10 y+15 w230 h2 0x10")
+
+        ; --- Config File Selector ---
+        settingsGui.Add("Text", "x10 y+10", "Select Active Config File:")
+
+        iniFiles := []
+        loop files, A_ScriptDir "\*.ini" {
+            iniFiles.Push(A_LoopFileName)
+        }
+
+        activeFile := ConfigManager.GetActiveName()
+        iniDDL := settingsGui.Add("DropDownList", "x10 y+5 w230", iniFiles)
+        iniDDL.Text := activeFile
+
+        ; --- Separator ---
+        settingsGui.Add("Text", "x10 y+15 w230 h2 0x10")
+
         btnSave := settingsGui.Add("Button", "x10 y+10 w80 Default", "Save")
-        btnSave.OnEvent("Click", (*) => this.SaveSettingsFromPopup(settingsGui, hkCtrl.Value, winChk.Value, launchChk.Value
-        ))
+        btnSave.OnEvent("Click", (*) => this.SaveSettingsFromPopup(settingsGui, hkCtrl.Value, winChk.Value, launchChk.Value,
+            iniDDL.Text))
 
         btnCancel := settingsGui.Add("Button", "x+10 yp w80", "Cancel")
         btnCancel.OnEvent("Click", (*) => settingsGui.Destroy())
@@ -163,7 +185,7 @@ class ShortcutUI {
         settingsGui.Show()
     }
 
-    static SaveSettingsFromPopup(parentGui, key, useWin, hideLaunch) {
+    static SaveSettingsFromPopup(parentGui, key, useWin, hideLaunch, activeIni) {
         newHotkey := (key != "") ? (useWin ? "#" : "") . key : ""
         if (this.CurrentAppHotkey != newHotkey) {
             if (this.CurrentAppHotkey != "")
@@ -173,6 +195,15 @@ class ShortcutUI {
                 this.RegisterAppHotkey(newHotkey)
         }
         this.HideOnLaunch := hideLaunch
+
+        ; Handle config file change
+        if (activeIni != ConfigManager.GetActiveName()) {
+            ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
+            ConfigManager.SetActiveName(activeIni)
+            this.RestartApp(false) ; Reload from NEW file
+            return
+        }
+
         ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
         parentGui.Destroy()
         MsgBox("Settings saved.")
@@ -358,8 +389,32 @@ class ShortcutUI {
         }
     }
 
-    static RestartApp() {
-        ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
+    static RestartApp(save := true) {
+        if (save) {
+            ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
+        }
         Reload()
+    }
+
+    static ShowExpandEditor() {
+        editorGui := Gui("+Owner" . this.MainGui.Hwnd . " +Resize", "Target Full Editor")
+        editorGui.SetFont("s10", "Segoe UI")
+
+        editCtrl := editorGui.Add("Edit", "x10 y10 w580 h340 Multi WantReturn", this.TargetEdit.Value)
+
+        btnSave := editorGui.Add("Button", "x10 y+10 w100 h30 Default", "Save && Close")
+        btnSave.OnEvent("Click", (*) => (this.TargetEdit.Value := editCtrl.Value, editorGui.Destroy()))
+
+        btnCancel := editorGui.Add("Button", "x+10 yp w100 h30", "Cancel")
+        btnCancel.OnEvent("Click", (*) => editorGui.Destroy())
+
+        ; Make it resizable
+        editorGui.OnEvent("Size", (GuiObj, MinMax, Width, Height) => (
+            editCtrl.Move(, , Width - 20, Height - 60),
+            btnSave.Move(, Height - 40),
+            btnCancel.Move(, Height - 40)
+        ))
+
+        editorGui.Show("w600 h400")
     }
 }
