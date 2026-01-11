@@ -13,6 +13,10 @@ class ShortcutUI {
     static ConfigBtn := 0
     static ReloadBtn := 0
     static SettingsBtn := 0
+    static SearchEdit := 0
+
+    ; Data store
+    static AllItems := []
 
     ; Global App settings/state
     static CurrentAppHotkey := ""
@@ -59,19 +63,28 @@ class ShortcutUI {
         this.LV := this.MainGui.Add("ListView", "x10 y+15 r12 w800", ["Type", "Name", "Hotkey", "Target", "Raw"])
         this.LV.OnEvent("DoubleClick", (LV_Obj, RowNum) => ShortcutUI.ListViewDoubleClick(LV_Obj, RowNum))
 
+        ; Search Filter (At the very bottom)
+        this.MainGui.Add("Text", "x10 y+10", "Filter:")
+        this.SearchEdit := this.MainGui.Add("Edit", "x+5 yp-4 w200")
+        this.SearchEdit.OnEvent("Change", (*) => this.RefreshListView())
+
         ; Window events
         this.MainGui.OnEvent("Close", (*) => this.MainGui.Hide())
         this.MainGui.OnEvent("Escape", (*) => this.MainGui.Hide())
         this.MainGui.OnEvent("Size", (GuiObj, MinMax, Width, Height) => this.OnSize(GuiObj, MinMax, Width, Height))
 
         ; Initialize
-        loadedSettings := ConfigManager.Load(this.LV, HotkeyManager)
+        loaded := ConfigManager.Load(this.LV, HotkeyManager)
+        loadedSettings := loaded.settings
+        this.AllItems := loaded.items
         this.HideOnLaunch := loadedSettings.hideOnLaunch
 
         if (loadedSettings.appHotkey != "") {
             this.CurrentAppHotkey := loadedSettings.appHotkey
             this.RegisterAppHotkey(loadedSettings.appHotkey)
         }
+
+        this.RefreshListView() ; Initial fill
 
         try {
             this.LV.ModifyCol(1, "AutoHdr")
@@ -160,7 +173,7 @@ class ShortcutUI {
                 this.RegisterAppHotkey(newHotkey)
         }
         this.HideOnLaunch := hideLaunch
-        ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
+        ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
         parentGui.Destroy()
         MsgBox("Settings saved.")
     }
@@ -196,7 +209,8 @@ class ShortcutUI {
         this.ConfigBtn.Move(Width - 110)
         this.ReloadBtn.Move(Width - 110)
         this.SettingsBtn.Move(Width - 34, 10)
-        this.LV.Move(, , Width - 20, Height - 140)
+        this.LV.Move(, , Width - 20, Height - 180)
+        this.SearchEdit.Move(, Height - 35)
     }
 
     static Toggle(*) {
@@ -230,22 +244,22 @@ class ShortcutUI {
 
         fullHotkey := (useWin ? "#" : "") . key
 
-        loop this.LV.GetCount() {
-            if (this.LV.GetText(A_Index, 5) = fullHotkey) {
+        for item in this.AllItems {
+            if (item.hotkeyStr = fullHotkey) {
                 MsgBox("Hotkey already in use.")
                 return
             }
         }
 
         HotkeyManager.Register(fullHotkey, type, target)
-        this.LV.Add("", type, name, this.ToHuman(fullHotkey), target, fullHotkey)
-        this.LV.ModifyCol()
+        this.AllItems.Push({ type: type, name: name, target: target, hotkeyStr: fullHotkey })
+        this.RefreshListView()
 
         this.NameEdit.Value := ""
         this.TargetEdit.Value := ""
         this.HotkeyCtrl.Value := ""
         this.WinCheck.Value := 0
-        ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
+        ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
     }
 
     static DeleteSelected() {
@@ -253,8 +267,17 @@ class ShortcutUI {
         if (row > 0) {
             hotkeyStr := this.LV.GetText(row, 5)
             HotkeyManager.Unregister(hotkeyStr)
-            this.LV.Delete(row)
-            ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
+
+            ; Remove from AllItems
+            for i, item in this.AllItems {
+                if (item.hotkeyStr == hotkeyStr) {
+                    this.AllItems.RemoveAt(i)
+                    break
+                }
+            }
+
+            this.RefreshListView()
+            ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
         }
     }
 
@@ -279,12 +302,39 @@ class ShortcutUI {
             }
 
             HotkeyManager.Unregister(fullHotkey)
-            this.LV.Delete(row)
-            ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
+
+            ; Remove from AllItems so it can be re-added as "new" (or updated)
+            for i, item in this.AllItems {
+                if (item.hotkeyStr == fullHotkey) {
+                    this.AllItems.RemoveAt(i)
+                    break
+                }
+            }
+
+            this.RefreshListView()
+            ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
 
             ; Focus on Name field for quick editing
             this.NameEdit.Focus()
         }
+    }
+
+    static RefreshListView() {
+        this.LV.Opt("-Redraw")
+        this.LV.Delete()
+        filter := StrLower(this.SearchEdit.Value)
+
+        for item in this.AllItems {
+            if (filter = ""
+                || InStr(StrLower(item.name), filter)
+                || InStr(StrLower(item.target), filter)) {
+                this.LV.Add("", item.type, item.name, this.ToHuman(item.hotkeyStr), item.target, item.hotkeyStr)
+            }
+        }
+
+        this.LV.ModifyCol()
+        this.LV.ModifyCol(5, 0)
+        this.LV.Opt("+Redraw")
     }
 
     static ListViewDoubleClick(LV_Obj, RowNum) {
@@ -309,7 +359,7 @@ class ShortcutUI {
     }
 
     static RestartApp() {
-        ConfigManager.Save(this.LV, this.CurrentAppHotkey, this.HideOnLaunch)
+        ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
         Reload()
     }
 }

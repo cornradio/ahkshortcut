@@ -9,8 +9,9 @@ class ConfigManager {
      */
     static Load(LV, HotkeyMgr) {
         settings := { appHotkey: "", hideOnLaunch: false }
+        items := []
         if !FileExist(this.FilePath)
-            return settings
+            return { settings: settings, items: items }
 
         try {
             content := FileRead(this.FilePath, "UTF-8")
@@ -38,21 +39,20 @@ class ConfigManager {
                     target := StrReplace(fields[3], "\n", "`n")
                     hotkeyStr := fields[4]
 
-                    ; Add to LV: [Type, Name, Hotkey(Human), Target, RawHotkey(Hidden)]
-                    LV.Add("", type, name, ShortcutUI.ToHuman(hotkeyStr), target, hotkeyStr)
+                    items.Push({ type: type, name: name, target: target, hotkeyStr: hotkeyStr })
                     HotkeyMgr.Register(hotkeyStr, type, target)
                 }
             }
         } catch Error as e {
             MsgBox("Failed to load config: " . e.Message, "Error", 16)
         }
-        return settings
+        return { settings: settings, items: items }
     }
 
     /**
      * Save ListView content and global settings to file
      */
-    static Save(LV, appHotkey := "", hideOnLaunch := false) {
+    static Save(items, appHotkey := "", hideOnLaunch := false) {
         try {
             fileContent := ""
 
@@ -62,11 +62,11 @@ class ConfigManager {
             }
             fileContent .= "HIDE_ON_LAUNCH|" . (hideOnLaunch ? "1" : "0") . "`n"
 
-            loop LV.GetCount() {
-                type := LV.GetText(A_Index, 1)
-                name := LV.GetText(A_Index, 2)
-                target := LV.GetText(A_Index, 4)
-                hotkeyStr := LV.GetText(A_Index, 5)
+            for item in items {
+                type := item.type
+                name := item.name
+                target := item.target
+                hotkeyStr := item.hotkeyStr
 
                 ; Convert newlines to \n for storage
                 cleanName := StrReplace(StrReplace(name, "`r`n", "\n"), "`n", "\n")
