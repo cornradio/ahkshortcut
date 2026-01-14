@@ -15,7 +15,7 @@ SetWorkingDir(A_ScriptDir)
 ; --- Tray Menu Settings ---
 A_TrayMenu.Delete()
 A_TrayMenu.Add("Show UI", (*) => ShortcutUI.Show())
-A_TrayMenu.Add("Open Folder", (*) => Run('explore "' A_ScriptDir '"'))
+A_TrayMenu.Add("Open Folder", (*) => Run('explorer.exe "' A_ScriptDir '"'))
 A_TrayMenu.Add()
 A_TrayMenu.Add("Exit", (*) => ExitApp())
 A_TrayMenu.Default := "Show UI"
@@ -32,7 +32,7 @@ if FileExist(A_ScriptDir "\icon.ico") {
 try {
     ConfigManager.Init()
     ShortcutUI.Create()
-    ShortcutUI.Show() ; Force show on start for debugging
+    ; ShortcutUI.Show() ; Force show on start for debugging (Removed for production)
 } catch Error as e {
     MsgBox("Critical Error during Init:`n`n" . e.Message . "`n`nStack:`n" . e.Stack, "Error", 16)
     ExitApp()

@@ -10,6 +10,11 @@ class ShortcutUI {
     static HotkeyCtrl := 0
     static TargetEdit := 0
     static WinCheck := 0
+    static WheelCheck := 0
+    static WheelDDL := 0
+    static AltCheck := 0
+    static CtrlCheck := 0
+    static ShiftCheck := 0
     static ConfigBtn := 0
     static ReloadBtn := 0
     static SettingsBtn := 0
@@ -39,7 +44,15 @@ class ShortcutUI {
 
         this.MainGui.Add("Text", "x+20 yp+4", "Hotkey:")
         this.HotkeyCtrl := this.MainGui.Add("Hotkey", "x+5 yp-4 w100")
-        this.WinCheck := this.MainGui.Add("Checkbox", "x+5 yp+4", "Win Key")
+        this.WheelDDL := this.MainGui.Add("DropDownList", "xp yp w100 Hidden Choose1", ["WheelUp", "WheelDown",
+            "MButton"])
+        this.WinCheck := this.MainGui.Add("Checkbox", "x+10 yp+4", "Win")
+        this.WheelCheck := this.MainGui.Add("Checkbox", "x+5 yp", "Wheel")
+        this.WheelCheck.OnEvent("Click", (*) => this.ToggleWheelMode())
+
+        this.AltCheck := this.MainGui.Add("Checkbox", "x+5 yp Hidden", "Alt")
+        this.CtrlCheck := this.MainGui.Add("Checkbox", "x+5 yp Hidden", "Ctrl")
+        this.ShiftCheck := this.MainGui.Add("Checkbox", "x+5 yp Hidden", "Shift")
 
         ; Row 1 Buttons
         this.MainGui.Add("Button", "x+10 yp-4 w60", "Add").OnEvent("Click", (*) => ShortcutUI.AddHotkey())
@@ -62,6 +75,7 @@ class ShortcutUI {
         ; Config buttons
         this.ConfigBtn := this.MainGui.Add("Button", "x+10 yp w100", "Edit Config")
         this.ConfigBtn.OnEvent("Click", (*) => ShortcutUI.OpenConfig())
+        this.ConfigBtn.OnEvent("ContextMenu", (*) => ShortcutUI.OpenConfigFolder())
         this.ReloadBtn := this.MainGui.Add("Button", "xp y+5 w100", "Hard Reload")
         this.ReloadBtn.OnEvent("Click", (*) => ShortcutUI.RestartApp())
         this.ReloadBtn.OnEvent("ContextMenu", (*) => ShortcutUI.RestartApp(false))
@@ -262,6 +276,22 @@ class ShortcutUI {
         }
     }
 
+    static ToggleWheelMode() {
+        if this.WheelCheck.Value {
+            this.HotkeyCtrl.Visible := false
+            this.WheelDDL.Visible := true
+            this.AltCheck.Visible := true
+            this.CtrlCheck.Visible := true
+            this.ShiftCheck.Visible := true
+        } else {
+            this.HotkeyCtrl.Visible := true
+            this.WheelDDL.Visible := false
+            this.AltCheck.Visible := false
+            this.CtrlCheck.Visible := false
+            this.ShiftCheck.Visible := false
+        }
+    }
+
     static RegisterAppHotkey(hotkeyStr) {
         Hotkey(hotkeyStr, (*) => ShortcutUI.Toggle(), "On")
     }
@@ -270,8 +300,22 @@ class ShortcutUI {
         type := this.TypeDDL.Text
         name := this.NameEdit.Value
         target := this.TargetEdit.Value
-        key := this.HotkeyCtrl.Value
+
+        key := ""
+        modifiers := ""
         useWin := this.WinCheck.Value
+
+        if (this.WheelCheck.Value) {
+            key := this.WheelDDL.Text
+            if (this.AltCheck.Value)
+                modifiers .= "!"
+            if (this.CtrlCheck.Value)
+                modifiers .= "^"
+            if (this.ShiftCheck.Value)
+                modifiers .= "+"
+        } else {
+            key := this.HotkeyCtrl.Value
+        }
 
         if (target = "" || key = "") {
             MsgBox("Target and Hotkey cannot be empty")
@@ -281,7 +325,7 @@ class ShortcutUI {
         if (name = "")
             name := target
 
-        fullHotkey := (useWin ? "#" : "") . key
+        fullHotkey := modifiers . (useWin ? "#" : "") . key
 
         for item in this.AllItems {
             if (item.hotkeyStr = fullHotkey) {
@@ -297,7 +341,12 @@ class ShortcutUI {
         this.NameEdit.Value := ""
         this.TargetEdit.Value := ""
         this.HotkeyCtrl.Value := ""
+        this.WheelCheck.Value := 0
         this.WinCheck.Value := 0
+        this.AltCheck.Value := 0
+        this.CtrlCheck.Value := 0
+        this.ShiftCheck.Value := 0
+        this.ToggleWheelMode() ; Reset to default state
         ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
     }
 
@@ -332,13 +381,39 @@ class ShortcutUI {
             this.NameEdit.Value := name
             this.TargetEdit.Value := target
 
-            if InStr(fullHotkey, "#") {
-                this.WinCheck.Value := 1
-                this.HotkeyCtrl.Value := StrReplace(fullHotkey, "#", "")
+            if (fullHotkey ~= "i)(WheelUp|WheelDown|MButton)$") {
+                this.WheelCheck.Value := 1
+
+                ; Extract Modifiers
+                this.WinCheck.Value := InStr(fullHotkey, "#")
+                this.AltCheck.Value := InStr(fullHotkey, "!")
+                this.CtrlCheck.Value := InStr(fullHotkey, "^")
+                this.ShiftCheck.Value := InStr(fullHotkey, "+")
+
+                ; Clean Key
+                cleanKey := fullHotkey
+                cleanKey := StrReplace(cleanKey, "#", "")
+                cleanKey := StrReplace(cleanKey, "!", "")
+                cleanKey := StrReplace(cleanKey, "^", "")
+                cleanKey := StrReplace(cleanKey, "+", "")
+
+                this.WheelDDL.Text := cleanKey
             } else {
-                this.WinCheck.Value := 0
-                this.HotkeyCtrl.Value := fullHotkey
+                ; Standard Hotkey Logic
+                this.WheelCheck.Value := 0
+                this.AltCheck.Value := 0
+                this.CtrlCheck.Value := 0
+                this.ShiftCheck.Value := 0
+
+                if InStr(fullHotkey, "#") {
+                    this.WinCheck.Value := 1
+                    this.HotkeyCtrl.Value := StrReplace(fullHotkey, "#", "")
+                } else {
+                    this.WinCheck.Value := 0
+                    this.HotkeyCtrl.Value := fullHotkey
+                }
             }
+            this.ToggleWheelMode()
 
             HotkeyManager.Unregister(fullHotkey)
 
@@ -394,6 +469,13 @@ class ShortcutUI {
     static OpenConfig() {
         if FileExist(ConfigManager.FilePath) {
             try Run('notepad.exe "' ConfigManager.FilePath '"')
+        }
+    }
+
+    static OpenConfigFolder() {
+        if FileExist(ConfigManager.FilePath) {
+            SplitPath(ConfigManager.FilePath, , &dir)
+            try Run('explorer.exe "' dir '"')
         }
     }
 
