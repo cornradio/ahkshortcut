@@ -72,5 +72,9 @@ AHK Shortcut 是快捷键管理工具，通过图形界面，轻松设置和管�
 [MIT License](LICENSE)
 
 ## 更新日志
+
+- 2026-01-16 Hotkey (快捷键原始字符串) filter 可以过滤快捷键，例如 "F5", "^c", "#e" 等。
+- 2026-01-16 UI 优化,增加disable选矿，可以临时禁用快捷键
 - 2026-01-11 增加了AHK v2.0支持，以及超多新功能。[notion update](https://www.notion.so/2e465c515f2a8002947ec21f6ca128ca)
 - 2025-01-13 增加了多行文本send支持
+

@@ -60,9 +60,13 @@ class ConfigManager {
                     name := StrReplace(fields[2], "\n", "`n")
                     target := StrReplace(fields[3], "\n", "`n")
                     hotkeyStr := fields[4]
+                    disabled := (fields.Length >= 5 && fields[5] = "1")
 
-                    items.Push({ type: type, name: name, target: target, hotkeyStr: hotkeyStr })
-                    HotkeyMgr.Register(hotkeyStr, type, target)
+                    items.Push({ type: type, name: name, target: target, hotkeyStr: hotkeyStr, disabled: disabled })
+
+                    if (!disabled) {
+                        HotkeyMgr.Register(hotkeyStr, type, target)
+                    }
                 }
             }
         } catch Error as e {
@@ -93,8 +97,9 @@ class ConfigManager {
                 ; Convert newlines to \n for storage
                 cleanName := StrReplace(StrReplace(name, "`r`n", "\n"), "`n", "\n")
                 cleanTarget := StrReplace(StrReplace(target, "`r`n", "\n"), "`n", "\n")
+                disabledState := (item.HasOwnProp("disabled") && item.disabled) ? "1" : "0"
 
-                fileContent .= type "|" cleanName "|" cleanTarget "|" hotkeyStr "`n"
+                fileContent .= type "|" cleanName "|" cleanTarget "|" hotkeyStr "|" disabledState "`n"
             }
 
             if FileExist(this.FilePath)

@@ -15,6 +15,10 @@ class ShortcutUI {
     static AltCheck := 0
     static CtrlCheck := 0
     static ShiftCheck := 0
+    static DisabledCheck := 0
+    static AddBtn := 0
+    static DelBtn := 0
+    static EditBtn := 0
     static ConfigBtn := 0
     static ReloadBtn := 0
     static SettingsBtn := 0
@@ -48,6 +52,7 @@ class ShortcutUI {
             "MButton"])
         this.WinCheck := this.MainGui.Add("Checkbox", "x+10 yp+4", "Win")
         this.WheelCheck := this.MainGui.Add("Checkbox", "x+5 yp", "Wheel")
+        this.DisabledCheck := this.MainGui.Add("Checkbox", "x+10 yp", "Disabled")
         this.WheelCheck.OnEvent("Click", (*) => this.ToggleWheelMode())
 
         this.AltCheck := this.MainGui.Add("Checkbox", "x+5 yp Hidden", "Alt")
@@ -55,9 +60,15 @@ class ShortcutUI {
         this.ShiftCheck := this.MainGui.Add("Checkbox", "x+5 yp Hidden", "Shift")
 
         ; Row 1 Buttons
-        this.MainGui.Add("Button", "x+10 yp-4 w60", "Add").OnEvent("Click", (*) => ShortcutUI.AddHotkey())
-        this.MainGui.Add("Button", "x+10 yp w80", "Delete").OnEvent("Click", (*) => ShortcutUI.DeleteSelected())
-        this.MainGui.Add("Button", "x+10 yp w80", "Edit").OnEvent("Click", (*) => ShortcutUI.EditSelected())
+        ; width
+        this.AddBtn := this.MainGui.Add("Button", "x850 yp-4 w60", "Add")
+        this.AddBtn.OnEvent("Click", (*) => ShortcutUI.AddHotkey())
+
+        this.DelBtn := this.MainGui.Add("Button", "x+10 yp w80", "Delete")
+        this.DelBtn.OnEvent("Click", (*) => ShortcutUI.DeleteSelected())
+
+        this.EditBtn := this.MainGui.Add("Button", "x+10 yp w80", "Edit")
+        this.EditBtn.OnEvent("Click", (*) => ShortcutUI.EditSelected())
 
         ; Hidden Default Button to handle "Enter" key smartly
         this.MainGui.Add("Button", "x0 y0 w0 h0 +Default", "HiddenEnter").OnEvent("Click", (*) => ShortcutUI.OnEnterPressed())
@@ -121,6 +132,10 @@ class ShortcutUI {
         }
 
         if !this.HideOnLaunch {
+            ; Pre-calculate layout before showing to prevent ghosting
+            this.MainGui.GetClientPos(, , &w, &h)
+            this.OnSize(this.MainGui, 0, w, h)
+
             this.Show()
         }
     }
@@ -129,6 +144,7 @@ class ShortcutUI {
         if this.MainGui {
             this.MainGui.Show()
             WinActivate("ahk_id " this.MainGui.Hwnd)
+            try WinRedraw("ahk_id " this.MainGui.Hwnd)
         }
     }
 
@@ -264,6 +280,20 @@ class ShortcutUI {
 
         this.FooterText.Move(Width - 220, Height - 30, 150)
         this.GithubBtnMain.Move(Width - 70, Height - 34)
+
+        ; Anchor top buttons to right
+        ; SettingsBtn is at Width - 34 (24px wide). So we start from -44?
+        ; Layout from right to left: Settings [gap] Edit [gap] Delete [gap] Add
+        ; EditBtn (w80) -> Width - 34 - 10 - 80 = Width - 124
+        ; DelBtn (w80) -> Width - 124 - 10 - 80 = Width - 214
+        ; AddBtn (w60) -> Width - 214 - 10 - 60 = Width - 284
+
+        if (this.EditBtn)
+            this.EditBtn.Move(Width - 124)
+        if (this.DelBtn)
+            this.DelBtn.Move(Width - 214)
+        if (this.AddBtn)
+            this.AddBtn.Move(Width - 284)
     }
 
     static Toggle(*) {
@@ -304,6 +334,7 @@ class ShortcutUI {
         key := ""
         modifiers := ""
         useWin := this.WinCheck.Value
+        isDisabled := this.DisabledCheck.Value
 
         if (this.WheelCheck.Value) {
             key := this.WheelDDL.Text
@@ -334,8 +365,12 @@ class ShortcutUI {
             }
         }
 
-        HotkeyManager.Register(fullHotkey, type, target)
-        this.AllItems.Push({ type: type, name: name, target: target, hotkeyStr: fullHotkey })
+        this.AllItems.Push({ type: type, name: name, target: target, hotkeyStr: fullHotkey, disabled: isDisabled })
+
+        if (!isDisabled) {
+            HotkeyManager.Register(fullHotkey, type, target)
+        }
+
         this.RefreshListView()
 
         this.NameEdit.Value := ""
@@ -346,6 +381,7 @@ class ShortcutUI {
         this.AltCheck.Value := 0
         this.CtrlCheck.Value := 0
         this.ShiftCheck.Value := 0
+        this.DisabledCheck.Value := 0
         this.ToggleWheelMode() ; Reset to default state
         ConfigManager.Save(this.AllItems, this.CurrentAppHotkey, this.HideOnLaunch)
     }
@@ -378,6 +414,17 @@ class ShortcutUI {
             fullHotkey := this.LV.GetText(row, 5)
 
             this.TypeDDL.Text := type
+
+            ; Find item to get disabled state
+            isDisabled := false
+            for item in this.AllItems {
+                if item.hotkeyStr == fullHotkey {
+                    isDisabled := (item.HasOwnProp("disabled") && item.disabled)
+                    break
+                }
+            }
+            this.DisabledCheck.Value := isDisabled
+
             this.NameEdit.Value := name
             this.TargetEdit.Value := target
 
@@ -441,8 +488,15 @@ class ShortcutUI {
         for item in this.AllItems {
             if (filter = ""
                 || InStr(StrLower(item.name), filter)
-                || InStr(StrLower(item.target), filter)) {
-                this.LV.Add("", item.type, item.name, this.ToHuman(item.hotkeyStr), item.target, item.hotkeyStr)
+                || InStr(StrLower(item.target), filter)
+                || InStr(StrLower(item.hotkeyStr), filter)) {
+
+                displayHotkey := this.ToHuman(item.hotkeyStr)
+                if (item.HasOwnProp("disabled") && item.disabled) {
+                    displayHotkey .= " (Disabled)"
+                }
+
+                this.LV.Add("", item.type, item.name, displayHotkey, item.target, item.hotkeyStr)
             }
         }
 
